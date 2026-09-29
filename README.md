@@ -24,7 +24,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 3 | Data validation & preprocessing | ✅ **Complete** |
 | 4 | EDA | ✅ **Complete** |
 | 5 | Feature engineering | ✅ **Complete** |
-| 6 | Baseline model | ⏳ NOT YET EXECUTED |
+| 6 | Baseline model | ✅ **Complete** |
 | 7 | Advanced models | ⏳ NOT YET EXECUTED |
 | 8 | Hyperparameter tuning | ⏳ NOT YET EXECUTED |
 | 9 | Calibration | ⏳ NOT YET EXECUTED |
@@ -119,6 +119,25 @@ Reproduce with `python scripts/build_features.py`. Artifacts:
   domain knowledge, not label-fitted thresholds.
 - The base vs. engineered sets are both available via
   `prepare_data(include_engineered=...)` for the Phase 52 A/B experiments.
+
+### Phase 6 — baseline Logistic Regression (executed)
+
+Reproduce with `python scripts/train_baseline.py`. Metrics reported on the
+**validation** set (test untouched). Artifacts: `results/baseline_metrics.json`,
+`docs/figures/baseline/` (confusion, ROC, PR, calibration).
+
+| Model (validation) | ROC-AUC | PR-AUC | Precision | Recall | F1 | Log Loss | Brier |
+|--------------------|--------:|-------:|----------:|-------:|---:|---------:|------:|
+| LogReg (base features) | 0.8297 | 0.6282 | 0.6388 | 0.5160 | 0.5709 | 0.4358 | 0.1408 |
+| LogReg (engineered) — **baseline** | **0.8338** | **0.6448** | 0.6651 | 0.5160 | 0.5812 | 0.4308 | 0.1388 |
+
+- **RQ1 (Experiment A vs B):** engineered features improve ROC-AUC **+0.0041**
+  and PR-AUC **+0.0166** over base features — a modest but consistent gain.
+- Accuracy is deliberately not the headline (imbalanced data); ROC-AUC / PR-AUC /
+  recall / Brier lead. LR is already fairly well-calibrated (Brier 0.139),
+  giving Phase 9 a reference point.
+- Confusion @0.5 (engineered): TN=703, FP=73, FN=136, TP=145 — recall 0.52 at
+  the default threshold motivates the Phase 54 threshold analysis.
 
 ---
 
