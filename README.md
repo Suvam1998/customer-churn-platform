@@ -29,7 +29,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 8 | Hyperparameter tuning | ✅ **Complete** |
 | 9 | Calibration | ✅ **Complete** |
 | 10 | Explainable AI (SHAP) | ✅ **Complete** |
-| 11 | Customer segmentation | ⏳ NOT YET EXECUTED |
+| 11 | Customer segmentation | ✅ **Complete** |
 | 12 | CLV & revenue-at-risk | ⏳ NOT YET EXECUTED |
 | 13 | Retention engine | ⏳ NOT YET EXECUTED |
 | 14 | PostgreSQL | ⏳ NOT YET EXECUTED |
@@ -236,6 +236,29 @@ Artifacts: `results/shap_global_importance.csv`,
   `sigmoid(base + Σ SHAP)` reproduces the model's predicted probability
   (atol 1e-2). Directionality on the beeswarm is correct (low tenure → higher
   churn SHAP).
+
+### Phase 11 — customer segmentation (executed)
+
+Reproduce with `python scripts/run_segmentation.py`. K-Means on
+[tenure, MonthlyCharges, TotalCharges, service_adoption_score,
+churn_probability]; **k=3 chosen by silhouette** (0.4261). Artifacts:
+`results/segmentation_profile.json`, `data/features/segments.parquet`,
+`docs/figures/segmentation/{k_selection,pca_clusters}.png`.
+
+| Cluster | Size | Avg tenure | Avg monthly | Avg churn prob | Actual churn | Label |
+|--------:|-----:|-----------:|------------:|---------------:|-------------:|-------|
+| 1 | 2,392 (34%) | 11.1 | 75.08 | 0.5336 | 0.5464 | **High-value/high-risk** |
+| 2 | 2,341 (33%) | 56.7 | 88.92 | 0.1490 | 0.1427 | High-value/low-risk |
+| 0 | 2,310 (33%) | 29.8 | 29.60 | 0.1028 | 0.0987 | Low-value/low-risk |
+
+- **k is data-driven** (Elbow + Silhouette), not assumed. Silhouette peaks at
+  k=3; a distinct "Low-value/high-risk" cluster does not emerge in this data.
+- Labels are assigned **after** profiling, relative to overall medians.
+- **Cross-check:** each cluster's mean predicted churn probability closely
+  matches its **actual** churn rate (0.53↔0.55, 0.15↔0.14, 0.10↔0.10),
+  independently validating both the model and the segmentation. Cluster 1
+  (new, high-spend, high-risk) is the priority retention target — feeds
+  Phase 12/13.
 
 ---
 
