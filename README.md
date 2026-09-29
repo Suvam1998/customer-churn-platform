@@ -32,7 +32,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 11 | Customer segmentation | ✅ **Complete** |
 | 12 | CLV & revenue-at-risk | ✅ **Complete** |
 | 13 | Retention engine | ✅ **Complete** |
-| 14 | PostgreSQL | ⏳ NOT YET EXECUTED |
+| 14 | PostgreSQL | ✅ **Complete** |
 | 15 | FastAPI (full) | ⏳ NOT YET EXECUTED |
 | 16 | Real-time event simulator | ⏳ NOT YET EXECUTED |
 | 17 | Kafka integration | ⏳ NOT YET EXECUTED |
@@ -300,6 +300,23 @@ values are **estimates**. Artifacts: `results/retention_summary.json`,
   customers, so `payment_assistance` dominates the ordered ruleset on this
   dataset; the engine still supports the full action catalogue for other
   signal patterns.
+
+### Phase 14 — PostgreSQL persistence (executed)
+
+Reproduce with `python scripts/init_db.py`. Full schema
+(`database/schema.sql`) + SQLAlchemy ORM (`src/db/models.py`) for 10 tables:
+customers, subscriptions, customer_events, customer_features, predictions,
+risk_scores, recommendations, model_versions, experiments, monitoring_metrics.
+
+- **PostgreSQL-compatible, SQLite-fallback:** the session layer uses
+  `DATABASE_URL` / `POSTGRES_*` if set, else a local SQLite file — so the
+  platform runs with **no PostgreSQL installed**. Generic `JSON` columns work on
+  both.
+- **Seeded from real data + artifacts:** 7,043 customers & subscriptions from
+  the IBM Telco dataset; 7,043 predictions/risk_scores/recommendations from the
+  Phase 13 artifacts; 1 production model_version from the Phase 9 metadata.
+- Events carry an `is_simulated` flag (real-time events are simulated —
+  Phase 16+).
 
 ---
 
