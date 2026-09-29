@@ -27,7 +27,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 6 | Baseline model | ✅ **Complete** |
 | 7 | Advanced models | ✅ **Complete** |
 | 8 | Hyperparameter tuning | ✅ **Complete** |
-| 9 | Calibration | ⏳ NOT YET EXECUTED |
+| 9 | Calibration | ✅ **Complete** |
 | 10 | Explainable AI (SHAP) | ⏳ NOT YET EXECUTED |
 | 11 | Customer segmentation | ⏳ NOT YET EXECUTED |
 | 12 | CLV & revenue-at-risk | ⏳ NOT YET EXECUTED |
@@ -192,6 +192,29 @@ untouched. Artifacts: `results/tuning_results.json`,
 - The best tuned pipeline is persisted as the model artifact for downstream
   phases (SHAP, retention, API). Test set still reserved for the final
   single evaluation.
+
+### Phase 9 — probability calibration (executed)
+
+Reproduce with `python scripts/calibrate_model.py`. Compares uncalibrated /
+Platt (sigmoid) / isotonic on **validation** (Brier-selected; test untouched).
+Artifacts: `results/calibration_results.json`,
+`docs/figures/calibration/reliability_comparison.png`,
+`models/production_model.joblib` (+ meta).
+
+| Variant (validation) | ROC-AUC | PR-AUC | F1 | Log Loss | Brier |
+|----------------------|--------:|-------:|---:|---------:|------:|
+| **uncalibrated** (selected) | 0.8371 | 0.6442 | 0.5762 | 0.4266 | **0.1372** |
+| platt_sigmoid | 0.8368 | 0.6445 | 0.5750 | 0.4308 | 0.1379 |
+| isotonic | 0.8367 | 0.6423 | 0.5672 | 0.4614 | 0.1381 |
+
+- **RQ (calibration):** CatBoost's **native probabilities are already
+  well-calibrated** (Brier 0.1372). Neither Platt nor isotonic improves Brier or
+  log loss on validation, so the data-driven choice is to keep the uncalibrated
+  probabilities — an honest negative result, not a failure. The reliability
+  overlay shows all three variants hugging the diagonal.
+- **Production model:** `models/production_model.joblib`, version
+  `catboost-uncalibrated-2026-09-29`, selected by validation Brier. This is the
+  artifact SHAP, the retention engine, and the API load.
 
 ---
 
