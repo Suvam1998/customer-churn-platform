@@ -58,3 +58,42 @@ def test_no_customer_leakage_between_train_and_val():
     assert set(splits.id_train).isdisjoint(set(splits.id_val))
     assert set(splits.id_train).isdisjoint(set(splits.id_test))
     assert set(splits.id_val).isdisjoint(set(splits.id_test))
+
+
+# ---- Phase 7: advanced models -------------------------------------------
+
+def test_registry_has_core_and_optional_models():
+    from src.models.registry import get_estimators
+
+    estimators, skipped = get_estimators()
+    # Always-present sklearn models.
+    for name in ["logistic_regression", "decision_tree", "random_forest",
+                 "neural_network"]:
+        assert name in estimators
+    # Optional boosting libs: present unless skipped (never both).
+    for name in ["xgboost", "lightgbm", "catboost"]:
+        assert (name in estimators) ^ (name in skipped)
+
+
+@pytest.fixture(scope="module")
+def all_models():
+    from src.models.train import train_and_evaluate_all
+
+    return train_and_evaluate_all(include_engineered=True)
+
+
+def test_all_models_trained_and_reasonable(all_models):
+    _splits, results, pipes, _skipped = all_models
+    assert len(results) >= 6
+    for name, m in results.items():
+        assert 0.0 <= m["roc_auc"] <= 1.0
+        assert m["roc_auc"] > 0.75, f"{name} underperforms: {m['roc_auc']}"
+        assert "train_time_s" in m
+        assert name in pipes
+
+
+def test_same_split_used_for_all_models(all_models):
+    splits, results, _pipes, _skipped = all_models
+    # Every model was evaluated on the same validation size.
+    n_val = len(splits.y_val)
+    assert all(m["n"] == n_val for m in results.values())

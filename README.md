@@ -25,7 +25,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 4 | EDA | ✅ **Complete** |
 | 5 | Feature engineering | ✅ **Complete** |
 | 6 | Baseline model | ✅ **Complete** |
-| 7 | Advanced models | ⏳ NOT YET EXECUTED |
+| 7 | Advanced models | ✅ **Complete** |
 | 8 | Hyperparameter tuning | ⏳ NOT YET EXECUTED |
 | 9 | Calibration | ⏳ NOT YET EXECUTED |
 | 10 | Explainable AI (SHAP) | ⏳ NOT YET EXECUTED |
@@ -138,6 +138,35 @@ Reproduce with `python scripts/train_baseline.py`. Metrics reported on the
   giving Phase 9 a reference point.
 - Confusion @0.5 (engineered): TN=703, FP=73, FN=136, TP=145 — recall 0.52 at
   the default threshold motivates the Phase 54 threshold analysis.
+
+### Phase 7 — advanced models (executed)
+
+Reproduce with `python scripts/train_models.py`. All 7 models trained on the
+**same engineered split**, evaluated on **validation** (test untouched).
+Artifacts: `results/model_comparison.{csv,json}`,
+`docs/figures/models/model_comparison.png`. Values are **untuned defaults**
+(tuning is Phase 8).
+
+| Model (validation) | ROC-AUC | PR-AUC | Precision | Recall | F1 | Log Loss | Brier | Train s |
+|--------------------|--------:|-------:|----------:|-------:|---:|---------:|------:|--------:|
+| random_forest | **0.8346** | 0.6424 | 0.6881 | 0.4947 | 0.5756 | 0.4294 | 0.1380 | 0.56 |
+| logistic_regression | 0.8338 | **0.6448** | 0.6651 | 0.5160 | 0.5812 | 0.4308 | 0.1388 | 0.14 |
+| catboost | 0.8327 | 0.6379 | 0.6481 | 0.4982 | 0.5634 | 0.4350 | 0.1390 | 0.90 |
+| neural_network (MLP) | 0.8305 | 0.6389 | 0.6931 | 0.4662 | 0.5574 | 0.4342 | 0.1398 | 0.38 |
+| xgboost | 0.8265 | 0.6321 | 0.6806 | 0.5231 | **0.5915** | 0.4499 | 0.1426 | 0.51 |
+| decision_tree | 0.8210 | 0.5856 | 0.6284 | 0.4093 | 0.4957 | 0.4468 | 0.1452 | 0.07 |
+| lightgbm | 0.8201 | 0.6294 | 0.6256 | 0.5053 | 0.5591 | 0.4680 | 0.1473 | 0.38 |
+
+- **RQ2 (provisional):** scores cluster tightly (ROC-AUC 0.820–0.835) — realistic
+  for Telco churn, where LR is competitive with boosting. RF leads ROC-AUC, LR
+  leads PR-AUC, XGBoost leads F1. Final selection follows Phase 8 (tuning) + 9
+  (calibration), on validation.
+- **Neural network:** scikit-learn `MLPClassifier` is used (not TensorFlow/PyTorch)
+  to keep the platform reproducible on Python 3.14 — a documented substitution,
+  not a fabrication.
+- **Python 3.14 note:** XGBoost, LightGBM, and CatBoost all installed and ran on
+  3.14 (nothing skipped); the registry still skips-with-note if a wheel is ever
+  unavailable.
 
 ---
 

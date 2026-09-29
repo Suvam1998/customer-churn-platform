@@ -61,3 +61,41 @@ def train_estimator(estimator, include_engineered: bool = True,
     pipe = build_pipeline(estimator, include_engineered=include_engineered)
     pipe.fit(splits.X_train, splits.y_train)
     return pipe, splits
+
+
+def train_and_evaluate_all(
+    include_engineered: bool = True,
+    class_weight=None,
+    cfg: Config | None = None,
+):
+    """Train every registered estimator on the SAME split and evaluate on the
+    validation set.
+
+    Returns ``(splits, results, pipelines, skipped)`` where ``results`` maps
+    model name -> metrics dict (with ``train_time_s`` added), and ``pipelines``
+    maps model name -> fitted Pipeline.
+    """
+    import time
+
+    from src.models.metrics import classification_metrics
+    from src.models.registry import get_estimators
+
+    cfg = cfg or get_config()
+    splits = load_splits(include_engineered=include_engineered, cfg=cfg)
+    estimators, skipped = get_estimators(cfg=cfg, class_weight=class_weight)
+
+    results: dict = {}
+    pipelines: dict = {}
+    for name, est in estimators.items():
+        pipe = build_pipeline(est, include_engineered=include_engineered)
+        t0 = time.perf_counter()
+        pipe.fit(splits.X_train, splits.y_train)
+        train_time = time.perf_counter() - t0
+
+        y_prob = pipe.predict_proba(splits.X_val)[:, 1]
+        m = classification_metrics(splits.y_val, y_prob)
+        m["train_time_s"] = round(train_time, 3)
+        results[name] = m
+        pipelines[name] = pipe
+
+    return splits, results, pipelines, skipped
