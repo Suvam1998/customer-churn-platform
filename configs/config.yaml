@@ -1,0 +1,81 @@
+# ==========================================================================
+# Platform configuration
+# --------------------------------------------------------------------------
+# Thresholds and business assumptions live HERE, never hardcoded in code.
+# Values are ESTIMATES / assumptions for a capstone simulation, not real
+# financial figures. See docs/research.md.
+# ==========================================================================
+
+project:
+  name: "Real-Time Customer Churn Prediction & Intelligent Retention Platform"
+  version: "0.1.0"
+  random_seed: 42
+
+paths:
+  data_raw: "data/raw"
+  data_processed: "data/processed"
+  data_features: "data/features"
+  data_samples: "data/samples"
+  results: "results"
+  figures: "docs/figures"
+  models: "models"
+
+dataset:
+  name: "IBM Telco Customer Churn"
+  raw_filename: "telco_customer_churn.csv"
+  target_column: "Churn"
+  id_column: "customerID"
+  # Public mirror of the IBM Telco Customer Churn dataset (used in Phase 2).
+  source_url: "https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv"
+
+split:
+  train_size: 0.70
+  validation_size: 0.15
+  test_size: 0.15
+  stratify: true
+
+# Risk levels are configurable thresholds on the churn probability [0, 1].
+# Bands are read as: LOW <= t_low < MEDIUM <= t_medium < HIGH <= t_high < CRITICAL
+risk_thresholds:
+  low: 0.30
+  medium: 0.50
+  high: 0.70
+  # anything >= high and up to critical is HIGH; >= critical is CRITICAL
+  critical: 0.85
+
+# Customer Lifetime Value (ESTIMATE). CLV = avg_monthly_revenue * expected_lifetime_months * gross_margin
+clv:
+  expected_lifetime_months: 24
+  gross_margin: 0.30
+
+# Retention decision-engine business assumptions (ESTIMATES).
+retention:
+  intervention_effectiveness: 0.35   # assumed relative reduction in churn prob
+  default_intervention_cost: 50.0    # assumed cost per intervention (currency units)
+  priority_top_percent: 0.10         # top X% by priority score flagged for action
+
+# Decision thresholds used for evaluation / threshold analysis (Phase 54).
+threshold_analysis:
+  candidates: [0.30, 0.40, 0.50, 0.60, 0.70]
+
+monitoring:
+  drift_threshold: 0.15              # configurable drift score threshold
+  min_samples_for_drift: 100
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  title: "Churn & Retention Platform API"
+
+dashboard:
+  api_base_url: "http://localhost:8000"
+
+streaming:
+  mode: "local"                      # "local" | "kafka"
+  topic_events: "customer-events"
+  topic_risk_updates: "customer-risk-updates"
+  bootstrap_servers: "localhost:9092"
+
+mlflow:
+  tracking_uri: "file:./mlruns"
+  experiment_name: "churn-retention"

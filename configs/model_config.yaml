@@ -1,0 +1,73 @@
+# ==========================================================================
+# Model configuration — hyperparameter search spaces and training settings.
+# Consumed starting in Phase 6/7. Kept lean per the "no huge searches" rule.
+# ==========================================================================
+
+common:
+  random_seed: 42
+  cv_folds: 5
+  scoring: "roc_auc"
+  n_iter_random_search: 25
+
+models:
+  logistic_regression:
+    enabled: true
+    params:
+      C: [0.01, 0.1, 1.0, 10.0]
+      penalty: ["l2"]
+      class_weight: [null, "balanced"]
+      max_iter: [1000]
+
+  decision_tree:
+    enabled: true
+    params:
+      max_depth: [3, 5, 8, 12, null]
+      min_samples_leaf: [1, 5, 20, 50]
+      class_weight: [null, "balanced"]
+
+  random_forest:
+    enabled: true
+    params:
+      n_estimators: [200, 400]
+      max_depth: [6, 10, null]
+      min_samples_leaf: [1, 5, 20]
+      class_weight: [null, "balanced"]
+
+  xgboost:
+    enabled: true
+    params:
+      n_estimators: [200, 400]
+      max_depth: [3, 5, 7]
+      learning_rate: [0.03, 0.1]
+      subsample: [0.8, 1.0]
+      colsample_bytree: [0.8, 1.0]
+
+  lightgbm:
+    enabled: true
+    params:
+      n_estimators: [200, 400]
+      num_leaves: [31, 63]
+      learning_rate: [0.03, 0.1]
+      subsample: [0.8, 1.0]
+
+  catboost:
+    enabled: true
+    params:
+      iterations: [300, 500]
+      depth: [4, 6, 8]
+      learning_rate: [0.03, 0.1]
+
+  neural_network:
+    enabled: true
+    params:
+      hidden_units: [[64, 32], [128, 64]]
+      dropout: [0.2, 0.3]
+      learning_rate: [0.001]
+      epochs: [50]
+      batch_size: [64]
+
+calibration:
+  methods: ["sigmoid", "isotonic"]   # Platt (sigmoid) vs isotonic
+
+imbalance:
+  strategies: ["none", "class_weight", "smote"]
