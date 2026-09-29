@@ -30,7 +30,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 9 | Calibration | ✅ **Complete** |
 | 10 | Explainable AI (SHAP) | ✅ **Complete** |
 | 11 | Customer segmentation | ✅ **Complete** |
-| 12 | CLV & revenue-at-risk | ⏳ NOT YET EXECUTED |
+| 12 | CLV & revenue-at-risk | ✅ **Complete** |
 | 13 | Retention engine | ⏳ NOT YET EXECUTED |
 | 14 | PostgreSQL | ⏳ NOT YET EXECUTED |
 | 15 | FastAPI (full) | ⏳ NOT YET EXECUTED |
@@ -259,6 +259,25 @@ churn_probability]; **k=3 chosen by silhouette** (0.4261). Artifacts:
   independently validating both the model and the segmentation. Cluster 1
   (new, high-spend, high-risk) is the priority retention target — feeds
   Phase 12/13.
+
+### Phase 12 — CLV & revenue-at-risk (executed)
+
+Reproduce with `python scripts/run_value.py`. Artifacts:
+`results/value_summary.json`, `data/features/customer_value.parquet`.
+**All monetary values are ESTIMATES** from configurable assumptions
+(`expected_lifetime_months=24`, `gross_margin=0.30`) — not observed financials.
+
+- **Formulas:** `CLV = MonthlyCharges × 24 × 0.30`;
+  `revenue_at_risk = churn_probability × CLV`; `priority_score = revenue_at_risk`.
+- **Executed estimates:** total CLV ≈ **3,284,040**; total revenue-at-risk ≈
+  **1,000,723** (currency units). Risk levels: LOW 5,621 / MEDIUM 926 / HIGH 415
+  / CRITICAL 81.
+- **By segment:** the High-value/high-risk cluster concentrates **~70%** of the
+  estimated revenue-at-risk (705k of 1.00M) — the clear priority target.
+- **RQ3 (value vs. probability):** ranking the top 10% by *revenue-at-risk*
+  vs. *churn probability alone* overlaps only **77.3%** — **22.7% (160
+  customers)** are newly prioritised once value is considered. Customer value
+  materially changes retention prioritisation.
 
 ---
 
