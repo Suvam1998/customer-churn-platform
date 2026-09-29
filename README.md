@@ -34,7 +34,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 13 | Retention engine | ✅ **Complete** |
 | 14 | PostgreSQL | ✅ **Complete** |
 | 15 | FastAPI (full) | ✅ **Complete** |
-| 16 | Real-time event simulator | ⏳ NOT YET EXECUTED |
+| 16 | Real-time event simulator | ✅ **Complete** |
 | 17 | Kafka integration | ⏳ NOT YET EXECUTED |
 | 18 | Streamlit dashboard (full) | ⏳ NOT YET EXECUTED |
 | 19 | MLflow | ⏳ NOT YET EXECUTED |
@@ -338,6 +338,25 @@ pipeline → Phase 43).
 - `/predict` responses are fully dynamic; explanations come from SHAP (not
   hardcoded). `/event` returns a SIMULATED-labelled risk update (documented
   heuristic delta; full streaming re-inference is Phase 16/17).
+
+### Phase 16 — real-time event simulator (executed)
+
+Reproduce with `python scripts/run_event_simulation.py --n 25 --seed 7`.
+Generates **SIMULATED** events over **real** customer IDs and updates risk.
+
+- **Event generator** (`src/streaming/event_generator.py`): 9 event types
+  (login, purchase, payment_failed, support_ticket, complaint, plan_upgrade,
+  plan_downgrade, cancellation_attempt, inactivity) with weighted sampling and
+  ISO timestamps; IDs are drawn only from the real dataset (never invented).
+- **Risk-update flow** (`src/streaming/risk_update.py`): shared by the API and
+  the simulator. Bounded, documented per-event deltas; `RiskState` accumulates
+  successive events; each update yields previous/new probability, risk change,
+  new risk level, revenue-at-risk, and a fresh recommendation.
+- **Executed:** 25 events applied and persisted to `customer_events` +
+  `risk_scores`; e.g. `7764-BDPEE` 0.151→0.301 (+0.15, payment_failed);
+  `3027-ZTDHO` support_ticket kept CRITICAL → `account_manager_contact`.
+- The API `/event` route was refactored onto this shared logic. Every record is
+  flagged `is_simulated=True`.
 
 ---
 
