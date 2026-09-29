@@ -53,6 +53,19 @@ retention:
   intervention_effectiveness: 0.35   # assumed relative reduction in churn prob
   default_intervention_cost: 50.0    # assumed cost per intervention (currency units)
   priority_top_percent: 0.10         # top X% by priority score flagged for action
+  # High-value escalation threshold on estimated CLV (currency units, EST).
+  high_value_clv_threshold: 500.0
+  # Assumed per-action intervention costs (currency units, ESTIMATES).
+  action_costs:
+    payment_assistance: 30
+    plan_optimization: 40
+    personalized_discount: 60
+    technical_support_intervention: 45
+    account_manager_contact: 120
+    loyalty_reward: 70
+    feature_education: 15
+    onboarding_assistance: 25
+    no_intervention: 0
 
 # Decision thresholds used for evaluation / threshold analysis (Phase 54).
 threshold_analysis:

@@ -31,7 +31,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 10 | Explainable AI (SHAP) | ✅ **Complete** |
 | 11 | Customer segmentation | ✅ **Complete** |
 | 12 | CLV & revenue-at-risk | ✅ **Complete** |
-| 13 | Retention engine | ⏳ NOT YET EXECUTED |
+| 13 | Retention engine | ✅ **Complete** |
 | 14 | PostgreSQL | ⏳ NOT YET EXECUTED |
 | 15 | FastAPI (full) | ⏳ NOT YET EXECUTED |
 | 16 | Real-time event simulator | ⏳ NOT YET EXECUTED |
@@ -278,6 +278,28 @@ Reproduce with `python scripts/run_value.py`. Artifacts:
   vs. *churn probability alone* overlaps only **77.3%** — **22.7% (160
   customers)** are newly prioritised once value is considered. Customer value
   materially changes retention prioritisation.
+
+### Phase 13 — retention decision engine (executed)
+
+Reproduce with `python scripts/run_retention.py`. Ordered, documented,
+config-driven rules (**not** `if prob>0.5`) emit priority, urgency, action, and
+reason from churn/value/contract/payment/support/segment signals. Business-sim
+values are **estimates**. Artifacts: `results/retention_summary.json`,
+`data/features/retention_recommendations.parquet`.
+
+- **Actionable customers:** 1,422 of 7,043 (the other 5,621 are LOW risk →
+  `no_intervention`).
+- **Action mix:** payment_assistance 984, onboarding_assistance 302,
+  account_manager_contact 81, plan_optimization 55.
+- **Urgency:** LOW 5,621 / MEDIUM 926 / HIGH 415 / IMMEDIATE 81.
+- **Business simulation (EST):** total intervention cost ≈ 48,990; expected
+  retained value ≈ 188,608; net ≈ 139,618 — assuming a configurable 35%
+  intervention effectiveness. Clearly labelled as an estimate, not a realised
+  outcome.
+- **Honest note:** the electronic-check payment driver is common among at-risk
+  customers, so `payment_assistance` dominates the ordered ruleset on this
+  dataset; the engine still supports the full action catalogue for other
+  signal patterns.
 
 ---
 
