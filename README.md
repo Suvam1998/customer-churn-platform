@@ -20,7 +20,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | Phase | Description | Status |
 |------:|-------------|--------|
 | 1 | Project foundation (structure, config, health API, dashboard shell, tests) | ✅ **Complete** |
-| 2 | Real dataset ingestion & profiling | ⏳ NOT YET EXECUTED |
+| 2 | Real dataset ingestion & profiling | ✅ **Complete** |
 | 3 | Data validation & preprocessing | ⏳ NOT YET EXECUTED |
 | 4 | EDA | ⏳ NOT YET EXECUTED |
 | 5 | Feature engineering | ⏳ NOT YET EXECUTED |
@@ -48,6 +48,25 @@ The project is built incrementally in 27 phases (see the master plan).
 No model metrics, SHAP values, or financial figures are reported yet because
 those phases have not been executed. This project follows a strict **honesty
 rule**: every reported number originates from actual execution.
+
+### Phase 2 — dataset profile (executed)
+
+Downloaded from the public IBM mirror into `data/raw/telco_customer_churn.csv`.
+Reproduce with `python scripts/download_data.py`. Artifacts:
+`results/data_profile.json`, `docs/data_dictionary.md`.
+
+| Fact | Value |
+|------|-------|
+| Rows | 7,043 |
+| Columns | 21 |
+| Duplicate rows / IDs | 0 / 0 |
+| Missing (NaN) | none |
+| `TotalCharges` blanks | 11 (all `tenure == 0`; stored as text, handled in preprocessing — not dropped) |
+| Target `Churn` = No | 5,174 (73.46%) |
+| Target `Churn` = Yes | 1,869 (26.54%) |
+
+Class imbalance (~26.5% positive) is confirmed and drives the Phase 16 imbalance
+handling and the choice of PR-AUC / recall over accuracy.
 
 ---
 
