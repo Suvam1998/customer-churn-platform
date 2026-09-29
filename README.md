@@ -22,7 +22,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 1 | Project foundation (structure, config, health API, dashboard shell, tests) | ✅ **Complete** |
 | 2 | Real dataset ingestion & profiling | ✅ **Complete** |
 | 3 | Data validation & preprocessing | ✅ **Complete** |
-| 4 | EDA | ⏳ NOT YET EXECUTED |
+| 4 | EDA | ✅ **Complete** |
 | 5 | Feature engineering | ⏳ NOT YET EXECUTED |
 | 6 | Baseline model | ⏳ NOT YET EXECUTED |
 | 7 | Advanced models | ⏳ NOT YET EXECUTED |
@@ -84,6 +84,23 @@ Reproduce with `python scripts/validate_data.py`. Artifact:
 - **Preprocessing:** `ColumnTransformer` (median-impute+scale numerics;
   most-frequent-impute+one-hot categoricals) → **45 features**, fit on **train
   only** (leakage-safe), `handle_unknown="ignore"` for unseen categories.
+
+### Phase 4 — EDA (executed)
+
+Reproduce with `python scripts/run_eda.py`. Artifacts: 12 figures in
+`docs/figures/` + `docs/eda_summary.md`.
+
+Key findings (real numbers):
+
+| Signal | Finding |
+|--------|---------|
+| Contract | Month-to-month **42.7%** churn vs one-year **11.3%** vs two-year **2.8%** |
+| Tenure ↔ churn | Pearson **−0.35** (longer tenure → lower churn) |
+| MonthlyCharges ↔ churn | **+0.19** (higher monthly charges → more churn) |
+| TotalCharges ↔ churn | **−0.20**; note tenure↔TotalCharges **0.83** (collinearity) |
+
+These motivate the Phase 5 engineered features (tenure bands, contract/payment
+risk indicators, per-month charge ratios).
 
 ---
 
