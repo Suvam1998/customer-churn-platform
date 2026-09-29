@@ -28,7 +28,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 7 | Advanced models | ✅ **Complete** |
 | 8 | Hyperparameter tuning | ✅ **Complete** |
 | 9 | Calibration | ✅ **Complete** |
-| 10 | Explainable AI (SHAP) | ⏳ NOT YET EXECUTED |
+| 10 | Explainable AI (SHAP) | ✅ **Complete** |
 | 11 | Customer segmentation | ⏳ NOT YET EXECUTED |
 | 12 | CLV & revenue-at-risk | ⏳ NOT YET EXECUTED |
 | 13 | Retention engine | ⏳ NOT YET EXECUTED |
@@ -215,6 +215,27 @@ Artifacts: `results/calibration_results.json`,
 - **Production model:** `models/production_model.joblib`, version
   `catboost-uncalibrated-2026-09-29`, selected by validation Brier. This is the
   artifact SHAP, the retention engine, and the API load.
+
+### Phase 10 — Explainable AI / SHAP (executed)
+
+Reproduce with `python scripts/run_explainability.py`. `TreeExplainer` on the
+tuned CatBoost; explanations are 100% SHAP-generated (nothing hardcoded).
+Artifacts: `results/shap_global_importance.csv`,
+`results/explanations_sample.json`, `docs/figures/shap/shap_summary.png`.
+
+- **Global drivers (mean |SHAP|):** `tenure` (0.347) ≫ `InternetService_Fiber
+  optic` (0.261), `TechSupport_No` (0.179), `OnlineSecurity_No` (0.172),
+  `contract_risk_indicator` (0.160), `MonthlyCharges` (0.151),
+  `is_month_to_month` (0.145). Engineered risk features rank among the top
+  drivers, corroborating RQ1 and the EDA.
+- **Local example — customer `7590-VHVEG`** (tenure 1, churn_prob **0.647**):
+  top churn-increasing factors are low `tenure` (+0.79), `TotalCharges`,
+  `TechSupport_No`, `OnlineSecurity_No`, `Electronic check`; protective factors
+  include not having fiber optic and lower `MonthlyCharges`.
+- **Correctness (RQ5):** a test verifies **SHAP additivity** —
+  `sigmoid(base + Σ SHAP)` reproduces the model's predicted probability
+  (atol 1e-2). Directionality on the beeswarm is correct (low tenure → higher
+  churn SHAP).
 
 ---
 
