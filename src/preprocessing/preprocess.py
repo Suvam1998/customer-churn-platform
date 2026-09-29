@@ -90,8 +90,16 @@ class DataSplits:
         }
 
 
-def split_data(df_clean: pd.DataFrame, cfg: Config | None = None) -> DataSplits:
-    """Stratified 70/15/15 split. Requires an already-cleaned DataFrame."""
+def split_data(
+    df_clean: pd.DataFrame,
+    cfg: Config | None = None,
+    feature_columns: list[str] | None = None,
+) -> DataSplits:
+    """Stratified 70/15/15 split. Requires an already-cleaned DataFrame.
+
+    ``feature_columns`` selects which columns land in X (defaults to the base
+    feature set; pass the engineered set to include engineered features).
+    """
     cfg = cfg or get_config()
     seed = cfg.get("project.random_seed", 42)
     train_size = cfg.get("split.train_size", 0.70)
@@ -99,7 +107,8 @@ def split_data(df_clean: pd.DataFrame, cfg: Config | None = None) -> DataSplits:
     test_size = cfg.get("split.test_size", 0.15)
     stratify_flag = cfg.get("split.stratify", True)
 
-    X = df_clean[FEATURE_COLUMNS]
+    cols = feature_columns or FEATURE_COLUMNS
+    X = df_clean[cols]
     y = df_clean[TARGET_COLUMN]
     ids = df_clean[ID_COLUMN]
 
@@ -124,8 +133,17 @@ def split_data(df_clean: pd.DataFrame, cfg: Config | None = None) -> DataSplits:
     )
 
 
-def build_preprocessor() -> ColumnTransformer:
-    """Return an UNFITTED ColumnTransformer (fit only on training data)."""
+def build_preprocessor(
+    numeric_features: list[str] | None = None,
+    categorical_features: list[str] | None = None,
+) -> ColumnTransformer:
+    """Return an UNFITTED ColumnTransformer (fit only on training data).
+
+    Feature lists default to the base set; pass extended lists to include
+    engineered features (see ``features.feature_engineering``).
+    """
+    numeric_features = numeric_features or NUMERIC_FEATURES
+    categorical_features = categorical_features or CATEGORICAL_FEATURES
     numeric_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -140,8 +158,8 @@ def build_preprocessor() -> ColumnTransformer:
     )
     return ColumnTransformer(
         transformers=[
-            ("num", numeric_pipeline, NUMERIC_FEATURES),
-            ("cat", categorical_pipeline, CATEGORICAL_FEATURES),
+            ("num", numeric_pipeline, numeric_features),
+            ("cat", categorical_pipeline, categorical_features),
         ],
         remainder="drop",
         verbose_feature_names_out=False,
@@ -153,18 +171,35 @@ def get_feature_names(preprocessor: ColumnTransformer) -> list[str]:
     return list(preprocessor.get_feature_names_out())
 
 
-def prepare_data(cfg: Config | None = None) -> tuple[DataSplits, ColumnTransformer]:
-    """Convenience: load raw -> clean -> split -> fit preprocessor on TRAIN only.
+def prepare_data(
+    cfg: Config | None = None,
+    include_engineered: bool = False,
+) -> tuple[DataSplits, ColumnTransformer]:
+    """Convenience: load raw -> clean -> [engineer] -> split -> fit on TRAIN.
 
-    Returns the splits and the fitted preprocessor. This is the canonical,
-    leakage-safe entrypoint used by model-training phases.
+    When ``include_engineered`` is True the engineered features are added
+    (row-wise, before split => no leakage) and the preprocessor covers the
+    extended column set. Returns the splits and the fitted preprocessor — the
+    canonical leakage-safe entrypoint for model-training phases.
     """
     from src.ingestion.load_data import load_raw
 
     cfg = cfg or get_config()
     df = clean_raw(load_raw(cfg=cfg))
-    splits = split_data(df, cfg=cfg)
 
-    preprocessor = build_preprocessor()
+    if include_engineered:
+        from src.features.feature_engineering import (
+            FEATURED_FEATURE_COLUMNS,
+            build_featured_preprocessor,
+            engineer_features,
+        )
+
+        df = engineer_features(df)
+        splits = split_data(df, cfg=cfg, feature_columns=FEATURED_FEATURE_COLUMNS)
+        preprocessor = build_featured_preprocessor()
+    else:
+        splits = split_data(df, cfg=cfg)
+        preprocessor = build_preprocessor()
+
     preprocessor.fit(splits.X_train)  # <-- fit on training data ONLY
     return splits, preprocessor

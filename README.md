@@ -23,7 +23,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 2 | Real dataset ingestion & profiling | ✅ **Complete** |
 | 3 | Data validation & preprocessing | ✅ **Complete** |
 | 4 | EDA | ✅ **Complete** |
-| 5 | Feature engineering | ⏳ NOT YET EXECUTED |
+| 5 | Feature engineering | ✅ **Complete** |
 | 6 | Baseline model | ⏳ NOT YET EXECUTED |
 | 7 | Advanced models | ⏳ NOT YET EXECUTED |
 | 8 | Hyperparameter tuning | ⏳ NOT YET EXECUTED |
@@ -101,6 +101,24 @@ Key findings (real numbers):
 
 These motivate the Phase 5 engineered features (tenure bands, contract/payment
 risk indicators, per-month charge ratios).
+
+### Phase 5 — feature engineering (executed)
+
+Reproduce with `python scripts/build_features.py`. Artifacts:
+`data/features/features.parquet`, `docs/feature_dictionary.md`.
+
+- **13 engineered features** (row-wise, leakage-safe): `average_charge_per_month`,
+  `total_services`, `service_adoption_score`, `is_month_to_month`,
+  `is_long_term_contract`, `has_tech_support/online_security/online_backup/`
+  `device_protection`, `has_streaming`, and `payment/contract/tenure_risk_indicator`.
+- Base 45 → **58 preprocessed features** with the engineered set, still fit on
+  **train only**.
+- **Leakage guarantee:** every feature is a pure function of the customer's own
+  row (no target, no cross-row/global statistics); a test asserts features are
+  identical with the target column removed. Risk indicators encode telecom
+  domain knowledge, not label-fitted thresholds.
+- The base vs. engineered sets are both available via
+  `prepare_data(include_engineered=...)` for the Phase 52 A/B experiments.
 
 ---
 
