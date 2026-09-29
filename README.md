@@ -21,7 +21,7 @@ The project is built incrementally in 27 phases (see the master plan).
 |------:|-------------|--------|
 | 1 | Project foundation (structure, config, health API, dashboard shell, tests) | ✅ **Complete** |
 | 2 | Real dataset ingestion & profiling | ✅ **Complete** |
-| 3 | Data validation & preprocessing | ⏳ NOT YET EXECUTED |
+| 3 | Data validation & preprocessing | ✅ **Complete** |
 | 4 | EDA | ⏳ NOT YET EXECUTED |
 | 5 | Feature engineering | ⏳ NOT YET EXECUTED |
 | 6 | Baseline model | ⏳ NOT YET EXECUTED |
@@ -67,6 +67,23 @@ Reproduce with `python scripts/download_data.py`. Artifacts:
 
 Class imbalance (~26.5% positive) is confirmed and drives the Phase 16 imbalance
 handling and the choice of PR-AUC / recall over accuracy.
+
+### Phase 3 — validation & preprocessing (executed)
+
+Reproduce with `python scripts/validate_data.py`. Artifact:
+`results/validation_report.json`.
+
+- **Validation:** all 24 schema/quality checks PASS (required columns, unique
+  IDs, valid categorical/target values, non-negative charges, documented
+  `TotalCharges` blanks).
+- **Cleaning (documented, non-leaky):** `TotalCharges` text→numeric with the 11
+  `tenure == 0` blanks set to `0.0`; `Churn` encoded Yes=1/No=0; **no rows
+  dropped**.
+- **Split (stratified 70/15/15, seed 42):** train 4,929 / val 1,057 / test 1,057,
+  churn rate 0.2654 / 0.2658 / 0.2649.
+- **Preprocessing:** `ColumnTransformer` (median-impute+scale numerics;
+  most-frequent-impute+one-hot categoricals) → **45 features**, fit on **train
+  only** (leakage-safe), `handle_unknown="ignore"` for unseen categories.
 
 ---
 
