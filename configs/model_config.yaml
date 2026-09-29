@@ -53,7 +53,7 @@ models:
   catboost:
     enabled: true
     params:
-      iterations: [300, 500]
+      iterations: [200, 300]
       depth: [4, 6, 8]
       learning_rate: [0.03, 0.1]
 

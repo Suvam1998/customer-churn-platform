@@ -97,3 +97,22 @@ def test_same_split_used_for_all_models(all_models):
     # Every model was evaluated on the same validation size.
     n_val = len(splits.y_val)
     assert all(m["n"] == n_val for m in results.values())
+
+
+# ---- Phase 8: hyperparameter tuning -------------------------------------
+
+def test_tune_one_returns_valid_result():
+    from src.models.tuning import tune_one
+
+    # Small search keeps this fast; LR tunes quickly.
+    res = tune_one("logistic_regression", n_iter=3, cv=2)
+    assert set(["cv_best_score", "best_params", "val_metrics", "best_estimator"]) <= res.keys()
+    assert 0.0 <= res["cv_best_score"] <= 1.0
+    # The refit best estimator must produce valid probabilities.
+    from src.models.train import load_splits
+
+    splits = load_splits(include_engineered=True)
+    proba = res["best_estimator"].predict_proba(splits.X_val)[:, 1]
+    assert ((proba >= 0) & (proba <= 1)).all()
+    # Tuned params must come from the configured search space.
+    assert "C" in res["best_params"]

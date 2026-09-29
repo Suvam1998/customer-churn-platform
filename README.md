@@ -26,7 +26,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 5 | Feature engineering | ✅ **Complete** |
 | 6 | Baseline model | ✅ **Complete** |
 | 7 | Advanced models | ✅ **Complete** |
-| 8 | Hyperparameter tuning | ⏳ NOT YET EXECUTED |
+| 8 | Hyperparameter tuning | ✅ **Complete** |
 | 9 | Calibration | ⏳ NOT YET EXECUTED |
 | 10 | Explainable AI (SHAP) | ⏳ NOT YET EXECUTED |
 | 11 | Customer segmentation | ⏳ NOT YET EXECUTED |
@@ -167,6 +167,31 @@ Artifacts: `results/model_comparison.{csv,json}`,
 - **Python 3.14 note:** XGBoost, LightGBM, and CatBoost all installed and ran on
   3.14 (nothing skipped); the registry still skips-with-note if a wheel is ever
   unavailable.
+
+### Phase 8 — hyperparameter tuning (executed)
+
+Reproduce with `python scripts/tune_models.py`. `RandomizedSearchCV` with
+**3-fold CV on the training split**; models compared on **validation**; test
+untouched. Artifacts: `results/tuning_results.json`,
+`models/tuned_best_model.joblib` (+ meta).
+
+| Model | CV ROC-AUC | Val ROC-AUC | Val PR-AUC | Val F1 | Val Brier | Tune s |
+|-------|-----------:|------------:|-----------:|-------:|----------:|-------:|
+| **catboost** (best) | 0.8469 | **0.8371** | 0.6442 | 0.5762 | **0.1372** | 8.5 |
+| xgboost | 0.8461 | 0.8369 | 0.6405 | 0.5878 | 0.1377 | 2.7 |
+| logistic_regression | 0.8442 | 0.8338 | 0.6437 | 0.5737 | 0.1389 | 10.5 |
+| random_forest | 0.8464 | 0.8332 | 0.6381 | **0.6104** | 0.1657 | 7.2 |
+| lightgbm | 0.8349 | 0.8310 | 0.6333 | 0.5592 | 0.1410 | 2.9 |
+
+- **RQ2:** tuning lifted XGBoost most (0.8265 → 0.8369). **CatBoost** leads
+  validation ROC-AUC (0.8371) with the best Brier (0.1372) — best-calibrated of
+  the strong models. Best CatBoost params: `lr=0.03, iterations=200, depth=4`.
+- **Honest caveat:** RandomForest has the best F1 (0.6104) but the **worst Brier
+  (0.1657)** — poorly calibrated. Since this platform needs trustworthy churn
+  *probabilities*, calibration quality (Phase 9) matters as much as ranking.
+- The best tuned pipeline is persisted as the model artifact for downstream
+  phases (SHAP, retention, API). Test set still reserved for the final
+  single evaluation.
 
 ---
 
