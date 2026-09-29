@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 from src import __version__
 from src.config import get_config
-from api.routes import health
+from api.routes import customers, events, health, metrics, predictions
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,6 +56,10 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(health.router)
+    app.include_router(predictions.router)
+    app.include_router(customers.router)
+    app.include_router(events.router)
+    app.include_router(metrics.router)
 
     @app.get("/", tags=["root"], summary="API root")
     def root() -> dict:

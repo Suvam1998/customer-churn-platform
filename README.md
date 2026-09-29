@@ -33,7 +33,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 12 | CLV & revenue-at-risk | ✅ **Complete** |
 | 13 | Retention engine | ✅ **Complete** |
 | 14 | PostgreSQL | ✅ **Complete** |
-| 15 | FastAPI (full) | ⏳ NOT YET EXECUTED |
+| 15 | FastAPI (full) | ✅ **Complete** |
 | 16 | Real-time event simulator | ⏳ NOT YET EXECUTED |
 | 17 | Kafka integration | ⏳ NOT YET EXECUTED |
 | 18 | Streamlit dashboard (full) | ⏳ NOT YET EXECUTED |
@@ -317,6 +317,27 @@ risk_scores, recommendations, model_versions, experiments, monitoring_metrics.
   Phase 13 artifacts; 1 production model_version from the Phase 9 metadata.
 - Events carry an `is_simulated` flag (real-time events are simulated —
   Phase 16+).
+
+### Phase 15 — FastAPI (full) (executed)
+
+Run with `uvicorn api.main:app --reload` → `http://localhost:8000/docs`.
+Endpoints (all Pydantic-typed, proper status codes): `POST /predict`
+(existing id or ad-hoc raw features), `POST /event`, `GET /customer/{id}`,
+`/customer/{id}/explanation`, `/customer/{id}/recommendation`,
+`GET /customers/high-risk`, `GET /dashboard/metrics`, `GET /model/metrics`,
+`GET /monitoring/drift` (stub → Phase 20), `POST /retrain` (202, offline
+pipeline → Phase 43).
+
+- **Model service layer** (`api/services/model_service.py`) loads the production
+  model once and precomputes a scored per-customer table (fast reads, DB-optional);
+  SHAP explainer is lazy-loaded.
+- **Live-verified** (real HTTP): `/dashboard/metrics` → 7,043 customers,
+  churn 0.2654, 496 high-risk, revenue-at-risk ≈ 1,000,723, version
+  `catboost-uncalibrated-2026-09-29`; `/predict` for `7590-VHVEG` → prob 0.6468,
+  MEDIUM, `payment_assistance`, factors [tenure, TotalCharges, TechSupport No].
+- `/predict` responses are fully dynamic; explanations come from SHAP (not
+  hardcoded). `/event` returns a SIMULATED-labelled risk update (documented
+  heuristic delta; full streaming re-inference is Phase 16/17).
 
 ---
 
