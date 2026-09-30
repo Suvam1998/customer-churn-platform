@@ -37,7 +37,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 16 | Real-time event simulator | ✅ **Complete** |
 | 17 | Kafka integration | ✅ **Complete** |
 | 18 | Streamlit dashboard (full) | ✅ **Complete** |
-| 19 | MLflow | ⏳ NOT YET EXECUTED |
+| 19 | MLflow | ✅ **Complete** |
 | 20 | Monitoring & drift | ⏳ NOT YET EXECUTED |
 | 21 | Databricks | ⏳ NOT YET EXECUTED |
 | 22 | Snowflake | ⏳ NOT YET EXECUTED |
@@ -400,6 +400,26 @@ multipage layout with **7 pages**:
 - **Validated with Streamlit `AppTest`** — every page renders headlessly with
   no uncaught exception (this caught and fixed a real broker-payload bug). The
   full stack was smoke-tested live (Streamlit + API both healthy).
+
+### Phase 19 — MLflow tracking + registry (executed)
+
+Reproduce with `python scripts/run_mlflow.py`; view with
+`mlflow ui --backend-store-uri sqlite:///mlflow.db`.
+
+- **Experiment tracking:** logs **15 runs** into the `churn-retention`
+  experiment — 7 comparison (Phase 7), 5 tuning (Phase 8), 3 calibration
+  (Phase 9) — each with params, metrics, training duration, dataset version, and
+  preprocessing version tags. Every metric is a real executed result.
+- **Model registry:** the production model is logged (cloudpickle) and
+  registered as **`churn-retention-model` v1**.
+- **Stages via aliases:** MLflow 3.x removed model *stages*, so Development /
+  Staging / Production are expressed as registry **aliases** + a `stage` tag.
+- **Validation-gated promotion (no auto-promote):** promotion to `production`
+  requires `roc_auc ≥ 0.80` **and** `brier ≤ 0.20`. Executed: **PASS**
+  (roc_auc 0.8371, brier 0.1372) → promoted to production; otherwise it stays at
+  `staging`.
+- Backend upgraded to SQLite automatically (the registry needs a DB store, not a
+  file store).
 
 ---
 
