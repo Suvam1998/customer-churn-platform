@@ -3,12 +3,17 @@
 Decoupled from ``src`` — reads the base URL from the environment so the
 dashboard can point at a local or containerised API. Every call degrades
 gracefully: on error it returns ``None`` (pages then show a friendly message).
+If the standalone API server is not running and no custom URL is specified,
+it seamlessly falls back to the in-process FastAPI TestClient for standalone
+and Streamlit Cloud deployments.
 """
 from __future__ import annotations
 
+import logging
 import os
-
 import requests
+
+logger = logging.getLogger("churn.dashboard.client")
 
 API_BASE = os.getenv("DASHBOARD_API_BASE_URL", "http://localhost:8000")
 _TIMEOUT = 8
@@ -16,7 +21,19 @@ _TIMEOUT = 8
 
 class ApiClient:
     def __init__(self, base_url: str | None = None) -> None:
+        self.is_custom_base = base_url is not None
         self.base = (base_url or API_BASE).rstrip("/")
+        self._test_client = None
+
+    def _get_inprocess_client(self):
+        if self._test_client is None:
+            try:
+                from fastapi.testclient import TestClient
+                from api.main import app
+                self._test_client = TestClient(app)
+            except Exception as e:
+                logger.debug("Could not initialize in-process test client: %s", e)
+        return self._test_client
 
     def _get(self, path: str, params: dict | None = None):
         try:
@@ -25,6 +42,16 @@ class ApiClient:
                 return r.json()
             return {"__error__": r.status_code, "detail": _safe_detail(r)}
         except requests.RequestException as exc:
+            if not self.is_custom_base:
+                tc = self._get_inprocess_client()
+                if tc:
+                    try:
+                        r = tc.get(path, params=params)
+                        if r.status_code == 200:
+                            return r.json()
+                        return {"__error__": r.status_code, "detail": _safe_detail(r)}
+                    except Exception:
+                        pass
             return {"__error__": "unreachable", "detail": str(exc)}
 
     def _post(self, path: str, body: dict):
@@ -34,6 +61,16 @@ class ApiClient:
                 return r.json()
             return {"__error__": r.status_code, "detail": _safe_detail(r)}
         except requests.RequestException as exc:
+            if not self.is_custom_base:
+                tc = self._get_inprocess_client()
+                if tc:
+                    try:
+                        r = tc.post(path, json=body)
+                        if r.status_code in (200, 202):
+                            return r.json()
+                        return {"__error__": r.status_code, "detail": _safe_detail(r)}
+                    except Exception:
+                        pass
             return {"__error__": "unreachable", "detail": str(exc)}
 
     # endpoints

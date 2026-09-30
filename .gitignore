@@ -19,6 +19,9 @@ data/raw/*
 data/processed/*
 data/features/*
 data/samples/*
+data/delta/
+data/snowflake_mock.db
+*.db
 !data/**/.gitkeep
 
 # Models & results
