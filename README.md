@@ -35,7 +35,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 14 | PostgreSQL | ✅ **Complete** |
 | 15 | FastAPI (full) | ✅ **Complete** |
 | 16 | Real-time event simulator | ✅ **Complete** |
-| 17 | Kafka integration | ⏳ NOT YET EXECUTED |
+| 17 | Kafka integration | ✅ **Complete** |
 | 18 | Streamlit dashboard (full) | ⏳ NOT YET EXECUTED |
 | 19 | MLflow | ⏳ NOT YET EXECUTED |
 | 20 | Monitoring & drift | ⏳ NOT YET EXECUTED |
@@ -357,6 +357,25 @@ Generates **SIMULATED** events over **real** customer IDs and updates risk.
   `3027-ZTDHO` support_ticket kept CRITICAL → `account_manager_contact`.
 - The API `/event` route was refactored onto this shared logic. Every record is
   flagged `is_simulated=True`.
+
+### Phase 17 — Kafka integration (executed)
+
+Reproduce with `python scripts/run_streaming.py --n 30`. Pipeline:
+Event Generator → Producer → `customer-events` → Consumer → risk update →
+`customer-risk-updates` → DB.
+
+- **Broker abstraction** (`src/streaming/broker.py`): `KafkaBroker`
+  (lazy `kafka-python`) and a **file-backed `LocalBroker`** default so it runs
+  with **no Kafka installed**. `get_broker()` uses Kafka when
+  `streaming.mode=kafka` + broker available, else falls back with a warning.
+- **Producer/Consumer** (`producer.py`, `consumer.py`) are backend-agnostic;
+  the consumer applies the shared `RiskState`, publishes to
+  `customer-risk-updates`, and persists events/risk scores.
+- **Executed (local backend):** produced 30 → `customer-events`, consumed →
+  30 risk updates → `customer-risk-updates`; e.g. `3068-OMWZA` payment_failed
+  0.922→1.0 CRITICAL → `account_manager_contact`.
+- **Kafka mode:** `pip install kafka-python` + `docker compose --profile
+  streaming up`, then set `STREAMING_MODE=kafka`.
 
 ---
 
