@@ -36,7 +36,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 15 | FastAPI (full) | ✅ **Complete** |
 | 16 | Real-time event simulator | ✅ **Complete** |
 | 17 | Kafka integration | ✅ **Complete** |
-| 18 | Streamlit dashboard (full) | ⏳ NOT YET EXECUTED |
+| 18 | Streamlit dashboard (full) | ✅ **Complete** |
 | 19 | MLflow | ⏳ NOT YET EXECUTED |
 | 20 | Monitoring & drift | ⏳ NOT YET EXECUTED |
 | 21 | Databricks | ⏳ NOT YET EXECUTED |
@@ -376,6 +376,30 @@ Event Generator → Producer → `customer-events` → Consumer → risk update 
   0.922→1.0 CRITICAL → `account_manager_contact`.
 - **Kafka mode:** `pip install kafka-python` + `docker compose --profile
   streaming up`, then set `STREAMING_MODE=kafka`.
+
+### Phase 18 — Streamlit dashboard (executed)
+
+Run with `streamlit run dashboard/app.py` (start the API first). Native
+multipage layout with **7 pages**:
+
+1. **Overview** — KPI tiles (customers, churn rate, high-risk, revenue-at-risk,
+   avg prob, model version/metrics) + risk/churn charts + segment table.
+2. **Customer Risk** — filterable table (risk, segment, tenure, min prob) with
+   progress-bar churn column and recommendations.
+3. **Customer 360** — profile, risk/value, SHAP explanation chart,
+   recommendation, and a **simulate-event** control.
+4. **Real-Time Monitor** — inject SIMULATED events, session event log, and
+   recent `customer-risk-updates` from the streaming topic.
+5. **Segmentation** — cluster profiles + PCA / k-selection figures.
+6. **Model Performance** — production metrics, comparison table, and diagnostic
+   figures (comparison, SHAP, ROC/PR/confusion, calibration).
+7. **Monitoring** — drift status, data-quality report, prediction distribution.
+
+- **Shared client** (`dashboard/lib/api_client.py`) calls the API and degrades
+  gracefully (banner) when it's down; pages also read artifacts directly.
+- **Validated with Streamlit `AppTest`** — every page renders headlessly with
+  no uncaught exception (this caught and fixed a real broker-payload bug). The
+  full stack was smoke-tested live (Streamlit + API both healthy).
 
 ---
 
