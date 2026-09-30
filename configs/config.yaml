@@ -72,7 +72,8 @@ threshold_analysis:
   candidates: [0.30, 0.40, 0.50, 0.60, 0.70]
 
 monitoring:
-  drift_threshold: 0.15              # configurable drift score threshold
+  drift_threshold: 0.15              # per-feature PSI threshold for "drifted"
+  max_drifted_share: 0.30            # if >30% of features drift -> RETRAINING_REQUIRED
   min_samples_for_drift: 100
 
 api:

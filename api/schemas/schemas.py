@@ -151,7 +151,14 @@ class ModelMetrics(BaseModel):
 
 class DriftResponse(BaseModel):
     status: str
+    scenario: str
     note: str
+    n_features: int
+    n_drifted: int
+    share_drifted: float
+    threshold: float
+    drifted_features: list[str]
+    prediction_drift_psi: float | None
 
 
 class RetrainResponse(BaseModel):

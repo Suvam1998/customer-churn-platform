@@ -38,7 +38,7 @@ The project is built incrementally in 27 phases (see the master plan).
 | 17 | Kafka integration | ✅ **Complete** |
 | 18 | Streamlit dashboard (full) | ✅ **Complete** |
 | 19 | MLflow | ✅ **Complete** |
-| 20 | Monitoring & drift | ⏳ NOT YET EXECUTED |
+| 20 | Monitoring & drift | ✅ **Complete** |
 | 21 | Databricks | ⏳ NOT YET EXECUTED |
 | 22 | Snowflake | ⏳ NOT YET EXECUTED |
 | 23 | Docker | ⏳ NOT YET EXECUTED |
@@ -420,6 +420,25 @@ Reproduce with `python scripts/run_mlflow.py`; view with
   `staging`.
 - Backend upgraded to SQLite automatically (the registry needs a DB store, not a
   file store).
+
+### Phase 20 — monitoring & drift (executed)
+
+Reproduce with `python scripts/run_monitoring.py`. Custom **PSI** drift metrics
+(Evidently optional), configurable thresholds, wired into
+`GET /monitoring/drift` and the Monitoring page. Artifacts:
+`results/monitoring_report.json`, `docs/figures/monitoring/drift_{real,simulated}.png`.
+
+- **REAL (train vs test):** `STABLE` — 0/14 features drifted, prediction-drift
+  PSI 0.007. Correct: a static dataset shows no real drift (reported honestly).
+- **SIMULATED injected shift:** `RETRAINING_REQUIRED` — 4/14 features drifted
+  (tenure, MonthlyCharges, PaymentMethod, Contract — exactly the injected ones),
+  prediction-drift PSI 0.164 crosses the threshold. Clearly labelled synthetic,
+  purely to demonstrate the detector firing.
+- **Thresholds** are configurable (`monitoring.drift_threshold=0.15`,
+  `max_drifted_share=0.30`). PSI bands: <0.1 stable, 0.1–0.25 moderate, >0.25
+  significant.
+- **`RETRAINING_REQUIRED` is a signal only — no model is auto-deployed**
+  (promotion requires validation, Phase 42/43).
 
 ---
 

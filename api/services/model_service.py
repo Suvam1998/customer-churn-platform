@@ -57,6 +57,7 @@ class ChurnService:
         self._attach_segments(vt)
         self.table = vt.set_index(ID_COLUMN, drop=False)
         self._explainer = None
+        self._drift = None
 
     def _attach_segments(self, vt: pd.DataFrame) -> None:
         seg_path = self.cfg.resolve_path("paths.data_features") / "segments.parquet"
@@ -228,6 +229,31 @@ class ChurnService:
             "calibration": self.meta.get("calibration"),
             "metrics": self.meta.get("val_metrics", {}),
         }
+
+    def drift(self) -> dict:
+        """Real feature + prediction drift (reference=train vs current=test)."""
+        if self._drift is None:
+            from src.models.train import load_splits
+            from src.monitoring.monitor import build_report
+
+            splits = load_splits(include_engineered=True, cfg=self.cfg)
+            ref = self.model.predict_proba(splits.X_train[FEATURED_FEATURE_COLUMNS])[:, 1]
+            cur = self.model.predict_proba(splits.X_test[FEATURED_FEATURE_COLUMNS])[:, 1]
+            r = build_report(splits.X_train, splits.X_test, ref, cur,
+                             scenario="real:train-vs-test", cfg=self.cfg)
+            fd = r["feature_drift"]
+            self._drift = {
+                "status": r["status"],
+                "scenario": r["scenario"],
+                "note": r["note"],
+                "n_features": fd["n_features"],
+                "n_drifted": fd["n_drifted"],
+                "share_drifted": fd["share_drifted"],
+                "threshold": fd["threshold"],
+                "drifted_features": fd["drifted_features"],
+                "prediction_drift_psi": r["prediction_drift"]["psi"] if r["prediction_drift"] else None,
+            }
+        return self._drift
 
 
 @lru_cache(maxsize=1)

@@ -28,8 +28,6 @@ def model_metrics() -> ModelMetrics:
 
 @router.get("/monitoring/drift", response_model=DriftResponse)
 def monitoring_drift() -> DriftResponse:
-    """Drift monitoring is implemented in Phase 20 (Evidently + custom metrics)."""
-    return DriftResponse(
-        status="NOT_YET_IMPLEMENTED",
-        note="Data/prediction drift monitoring is delivered in Phase 20.",
-    )
+    """Real feature + prediction drift (reference=train vs current=test).
+    RETRAINING_REQUIRED is a signal only — no model is auto-deployed."""
+    return DriftResponse(**_svc().drift())

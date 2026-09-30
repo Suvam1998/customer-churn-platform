@@ -20,16 +20,33 @@ st.title("🩺 Monitoring")
 disclaimer(st)
 client = get_client()
 
-# --- drift status (Phase 20 delivers full drift) ---
-st.subheader("Drift status")
+# --- drift status (real: train vs test) ---
+st.subheader("Drift status (reference=train vs current=test)")
 drift = client.drift()
-if isinstance(drift, dict) and "status" in drift:
-    if drift["status"] == "NOT_YET_IMPLEMENTED":
-        st.info(f"🚧 {drift['note']}")
+if isinstance(drift, dict) and "status" in drift and "__error__" not in drift:
+    if drift["status"] == "RETRAINING_REQUIRED":
+        st.error(f"🔴 {drift['status']} — {drift['note']}")
     else:
-        st.write(drift)
+        st.success(f"🟢 {drift['status']} — {drift['note']}")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Features drifted", f"{drift['n_drifted']}/{drift['n_features']}")
+    c2.metric("Share drifted", f"{drift['share_drifted']:.0%}")
+    c3.metric("Prediction drift PSI", f"{drift.get('prediction_drift_psi', 0):.3f}")
+    if drift["drifted_features"]:
+        st.write("Drifted features:", drift["drifted_features"])
+    st.caption(f"PSI threshold = {drift['threshold']}. RETRAINING_REQUIRED is a "
+               "signal only — no model is auto-deployed.")
 else:
-    st.warning("Drift endpoint unavailable.")
+    st.warning("Drift endpoint unavailable (start the API).")
+
+# --- injected-drift demo figures (from scripts/run_monitoring.py) ---
+from lib.common import figures_dir, show_image_if_exists  # noqa: E402
+with st.expander("Drift PSI figures (run scripts/run_monitoring.py)"):
+    c1, c2 = st.columns(2)
+    with c1:
+        show_image_if_exists(st, figures_dir() / "monitoring" / "drift_real.png")
+    with c2:
+        show_image_if_exists(st, figures_dir() / "monitoring" / "drift_simulated.png")
 
 # --- data quality summary ---
 st.subheader("Data quality (validation report)")
